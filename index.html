@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="description" content="開いて1タップ。最速のメモ起票＆タスク管理">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Flash">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon.svg">
+  <link rel="stylesheet" href="style.css">
+  <title>Flash</title>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ── Header ──────────────────────────────────────────────────────────── -->
+  <header class="app-header">
+    <div class="app-logo">
+      <!-- lightning bolt -->
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <polygon points="13,2 6,13 11,13 11,22 18,11 13,11" fill="currentColor"/>
+      </svg>
+      Flash
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" id="settings-btn" aria-label="設定" title="設定">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none"
+             stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06
+                   a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09
+                   A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83
+                   l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09
+                   A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83
+                   l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09
+                   a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83
+                   l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09
+                   a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ── Main Views ──────────────────────────────────────────────────────── -->
+  <main>
+
+    <!-- ▸ INPUT VIEW ─────────────────────────────────────────────────────── -->
+    <section id="view-input" class="view" role="main" aria-label="入力">
+      <div class="input-top">
+      <div class="textarea-wrap">
+        <textarea
+          id="input-text"
+          placeholder="思考・タスク・ひらめきを…"
+          aria-label="メモ入力"
+          autocomplete="off"
+          autocorrect="off"
+          spellcheck="false"
+          maxlength="1000"
+        ></textarea>
+        <div class="char-count" id="char-count" aria-live="polite"></div>
+      </div>
+
+      <div>
+        <div class="section-label">タグを選択（複数可・省略で未分類）</div>
+        <div id="tag-buttons-container" class="tag-buttons" role="group" aria-label="タグ選択"></div>
+      </div>
+
+      <!-- ▸ Schedule Panel (shown when 予定 tag is selected) -->
+      <div id="schedule-panel" class="schedule-panel" aria-hidden="true">
+        <div class="schedule-panel-inner">
+
+          <div class="schedule-field">
+            <label class="schedule-label" for="schedule-title">予定名</label>
+            <input type="text" id="schedule-title" class="schedule-input"
+                   placeholder="例: ランチミーティング" maxlength="100"
+                   autocomplete="off" spellcheck="false">
+          </div>
+
+          <div class="schedule-field">
+            <label class="schedule-label" for="schedule-date">日付</label>
+            <input type="date" id="schedule-date" class="schedule-input schedule-date">
+          </div>
+
+          <div class="schedule-field">
+            <div class="schedule-label">時間帯</div>
+            <div class="time-slots" role="group" aria-label="時間帯を選択">
+              <label class="time-slot-label">
+                <input type="radio" name="schedule-time" value="morning">
+                <span class="time-slot-btn">朝</span>
+              </label>
+              <label class="time-slot-label">
+                <input type="radio" name="schedule-time" value="noon">
+                <span class="time-slot-btn">昼</span>
+              </label>
+              <label class="time-slot-label">
+                <input type="radio" name="schedule-time" value="evening">
+                <span class="time-slot-btn">夜</span>
+              </label>
+              <label class="time-slot-label">
+                <input type="radio" name="schedule-time" value="allday" checked>
+                <span class="time-slot-btn">終日</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="schedule-field">
+            <label class="schedule-label" for="schedule-memo">メモ</label>
+            <textarea
+              id="schedule-memo"
+              class="schedule-input schedule-memo"
+              placeholder="メモ（任意）"
+              rows="3"
+              autocomplete="off"
+              spellcheck="false"
+            ></textarea>
+          </div>
+
+        </div>
+      </div>
+
+      <button class="save-btn" id="save-btn" aria-label="保存する">
+        保存する
+      </button>
+      </div><!-- /.input-top -->
+
+      <!-- ▸ Inline list (scrollable) -->
+      <div id="inline-list" aria-live="polite"></div>
+
+    </section>
+
+    <!-- ▸ LIST VIEW ──────────────────────────────────────────────────────── -->
+    <section id="view-list" class="view" role="main" aria-label="記録一覧">
+      <div id="filter-bar" class="filter-bar" role="group" aria-label="フィルター"></div>
+      <div id="items-container" aria-live="polite"></div>
+    </section>
+
+    <!-- ▸ CALENDAR VIEW ──────────────────────────────────────────────────── -->
+    <section id="view-calendar" class="view" role="main" aria-label="カレンダー">
+      <div class="cal-nav">
+        <button class="cal-nav-btn" id="cal-prev" aria-label="前の月">‹</button>
+        <span id="cal-title" aria-live="polite"></span>
+        <button class="cal-nav-btn" id="cal-next" aria-label="次の月">›</button>
+      </div>
+      <div id="cal-grid" role="grid" aria-label="月カレンダー"></div>
+      <div id="cal-day-items" aria-live="polite"></div>
+    </section>
+
+    <!-- ▸ SETTINGS VIEW ──────────────────────────────────────────────────── -->
+    <section id="view-settings" class="view" role="main" aria-label="設定">
+
+      <div class="settings-topbar">
+        <span class="settings-topbar-title">設定</span>
+        <button class="settings-back-btn" id="settings-back-btn" aria-label="戻る">
+          戻る
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none"
+               stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Google Calendar -->
+      <div class="settings-section">
+        <div class="settings-header">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          Google Calendar 連携
+        </div>
+
+        <div class="settings-row">
+          <div class="settings-label">OAuth Client ID</div>
+          <input
+            type="text"
+            class="settings-input"
+            id="gcal-client-id"
+            placeholder="〇〇〇.apps.googleusercontent.com"
+            autocomplete="off"
+            spellcheck="false"
+          >
+          <div id="gcal-status" class="gcal-status">○ 未設定</div>
+          <div class="settings-desc">
+            Google Cloud Console でプロジェクトを作成し、OAuth 2.0 クライアントIDを発行してください。<br>
+            承認済みの JavaScript 生成元にこのページの URL を追加する必要があります。
+          </div>
+        </div>
+
+        <div class="settings-btn-row">
+          <button class="settings-btn primary" id="settings-save">保存</button>
+          <button class="settings-btn danger"  id="settings-disconnect">接続解除</button>
+        </div>
+      </div>
+
+      <!-- Data -->
+      <div class="settings-section">
+        <div class="settings-header">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+          データ管理
+        </div>
+        <div class="settings-row">
+          <div class="settings-label">エクスポート / インポート</div>
+          <div class="settings-desc">データはすべてこのデバイスのローカルストレージ（IndexedDB）に保存されています。</div>
+        </div>
+        <div class="settings-btn-row">
+          <button class="settings-btn" id="export-btn">⬇ エクスポート</button>
+          <button class="settings-btn" id="import-btn">⬆ インポート</button>
+          <input type="file" id="import-file" accept=".json" style="display:none">
+        </div>
+      </div>
+
+      <!-- Appearance -->
+      <div class="settings-section">
+        <div class="settings-header">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            <line x1="2" y1="12" x2="22" y2="12"/>
+          </svg>
+          表示設定
+        </div>
+        <div class="settings-row toggle-row">
+          <div>
+            <div class="settings-label">ダークモード</div>
+          </div>
+          <label class="toggle-switch" aria-label="ダークモード切り替え">
+            <input type="checkbox" id="dark-mode-toggle">
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- About -->
+      <div class="settings-section">
+        <div class="settings-header">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          このアプリについて
+        </div>
+        <div class="settings-row">
+          <div class="settings-desc">
+            <strong>Flash</strong> — 史上最速のアウトプット<br><br>
+            • すべてのデータはデバイス内のみに保存<br>
+            • 外部サーバーへの通信なし（GCal連携時を除く）<br>
+            • オフライン動作対応（PWA）
+          </div>
+        </div>
+      </div>
+
+      <p class="app-version">Flash v1.0.0</p>
+    </section>
+
+  </main>
+
+  <!-- ── Bottom Navigation ────────────────────────────────────────────────── -->
+  <nav class="bottom-nav" aria-label="メインナビゲーション">
+    <button class="nav-btn active" data-view="input" aria-label="入力">
+      <svg viewBox="0 0 24 24">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+      </svg>
+      入力
+    </button>
+    <button class="nav-btn" data-view="calendar" aria-label="カレンダー">
+      <svg viewBox="0 0 24 24">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+        <line x1="16" y1="2" x2="16" y2="6"/>
+        <line x1="8"  y1="2" x2="8"  y2="6"/>
+        <line x1="3"  y1="10" x2="21" y2="10"/>
+      </svg>
+      カレンダー
+    </button>
+    <button class="nav-btn" data-view="settings" aria-label="設定">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06
+                 a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09
+                 A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83
+                 l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09
+                 A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83
+                 l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09
+                 a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83
+                 l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09
+                 a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+      設定
+    </button>
+  </nav>
+
+</div><!-- #app -->
+
+<!-- ── Google Calendar Modal (bottom sheet) ────────────────────────────────── -->
+<div id="gcal-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="gcal-modal-title">
+  <div class="modal-sheet">
+    <div class="modal-handle" aria-hidden="true"></div>
+    <h2 class="modal-title" id="gcal-modal-title">📅 Googleカレンダーに追加</h2>
+
+    <div class="modal-field">
+      <label class="modal-label" for="gcal-subject">件名</label>
+      <textarea
+        id="gcal-subject"
+        class="modal-input"
+        rows="2"
+        maxlength="100"
+        placeholder="イベントのタイトル"
+      ></textarea>
+    </div>
+
+    <div class="modal-field">
+      <label class="modal-label" for="gcal-date">日付</label>
+      <input type="date" id="gcal-date" class="modal-input">
+    </div>
+
+    <div class="modal-field">
+      <div class="modal-label">時間帯</div>
+      <div class="time-slots" role="group" aria-label="時間帯を選択">
+        <label class="time-slot-label">
+          <input type="radio" name="time-slot" value="morning">
+          <span class="time-slot-btn"><span class="slot-icon">🌅</span>朝<br><small>08:00</small></span>
+        </label>
+        <label class="time-slot-label">
+          <input type="radio" name="time-slot" value="noon">
+          <span class="time-slot-btn"><span class="slot-icon">☀️</span>昼<br><small>12:00</small></span>
+        </label>
+        <label class="time-slot-label">
+          <input type="radio" name="time-slot" value="evening">
+          <span class="time-slot-btn"><span class="slot-icon">🌆</span>夜<br><small>19:00</small></span>
+        </label>
+        <label class="time-slot-label">
+          <input type="radio" name="time-slot" value="allday" checked>
+          <span class="time-slot-btn"><span class="slot-icon">🗓️</span>終日<br><small>&nbsp;</small></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="modal-field">
+      <div class="modal-label">カレンダーカラー</div>
+      <div class="color-grid" id="gcal-color-grid" role="group" aria-label="カラー選択">
+        <!-- JS で生成 -->
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="modal-cancel" id="gcal-cancel">キャンセル</button>
+      <button class="modal-save"   id="gcal-save">登録する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Confetti canvas ──────────────────────────────────────────────────────── -->
+<canvas id="confetti-canvas" aria-hidden="true"></canvas>
+
+<!-- ── Add Tag Modal ───────────────────────────────────────────────────────── -->
+<div id="add-tag-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="add-tag-modal-title">
+  <div class="modal-sheet">
+    <div class="modal-handle" aria-hidden="true"></div>
+    <h2 class="modal-title" id="add-tag-modal-title">タグを管理</h2>
+
+    <!-- 既存カスタムタグ一覧（JSで描画） -->
+    <div id="custom-tags-list"></div>
+
+    <div class="modal-field">
+      <label class="modal-label" for="new-tag-name">タグ名</label>
+      <input type="text" id="new-tag-name" class="modal-input"
+             placeholder="例: 読書メモ" maxlength="20"
+             autocomplete="off" spellcheck="false">
+    </div>
+
+    <div class="modal-field">
+      <div class="modal-label">カラー</div>
+      <div id="new-tag-colors" class="new-tag-colors"></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="modal-cancel" id="add-tag-cancel">キャンセル</button>
+      <button class="modal-save"   id="add-tag-save">追加する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Scripts ─────────────────────────────────────────────────────────────── -->
+<script src="db.js"></script>
+<script src="gcal.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>
