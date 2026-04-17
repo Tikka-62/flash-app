@@ -66,6 +66,7 @@ const S = {
   calMonth:     new Date().getMonth(),
   selectedDate: null,
   newTagColor:  TAG_PALETTE[0],
+  listCols:     parseInt(localStorage.getItem('flash_list_cols') || '1', 10),
 };
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
@@ -303,9 +304,23 @@ async function saveItem() {
 
   if (navigator.vibrate) navigator.vibrate(12);
 
-  // 予定 + GCal 連携済み → GCalモーダルを自動で開く
+  // 予定 + GCal 連携済み → 確認なしで即登録
   if (isScheduleMode && GCal.isConnected()) {
-    setTimeout(() => openGCalModal(item), 400);
+    const btn = $id('save-btn');
+    btn.textContent = '📅 カレンダー登録中…';
+    btn.classList.add('empty');
+    try {
+      item.googleEventId = await GCal.createEvent(item);
+      item.updatedAt = Date.now();
+      await DB.put(item);
+      toast('Googleカレンダーに登録しました ✓');
+      renderInlineList();
+    } catch (err) {
+      toast('カレンダー登録に失敗: ' + err.message, true);
+    } finally {
+      btn.textContent = '保存する';
+      btn.classList.add('empty'); // 入力空なので暗いまま
+    }
   } else {
     $id('input-text').focus();
   }
@@ -378,12 +393,35 @@ function refreshCurrentList() {
   else if (S.view === 'list') renderList();
 }
 
+// ─── Column icon SVG ──────────────────────────────────────────────────────────
+function colIcon(n) {
+  if (n === 1) return `<svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor">
+    <rect x="1" y="2"  width="14" height="3.5" rx="1"/>
+    <rect x="1" y="7"  width="14" height="3.5" rx="1"/>
+    <rect x="1" y="12" width="14" height="2"   rx="1"/>
+  </svg>`;
+  if (n === 2) return `<svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor">
+    <rect x="0.5" y="1" width="6.5" height="6.5" rx="1"/>
+    <rect x="9"   y="1" width="6.5" height="6.5" rx="1"/>
+    <rect x="0.5" y="9" width="6.5" height="6"   rx="1"/>
+    <rect x="9"   y="9" width="6.5" height="6"   rx="1"/>
+  </svg>`;
+  return `<svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor">
+    <rect x="0"  y="1" width="4.5" height="6.5" rx="1"/>
+    <rect x="5.75" y="1" width="4.5" height="6.5" rx="1"/>
+    <rect x="11.5" y="1" width="4.5" height="6.5" rx="1"/>
+    <rect x="0"  y="9" width="4.5" height="6" rx="1"/>
+    <rect x="5.75" y="9" width="4.5" height="6" rx="1"/>
+    <rect x="11.5" y="9" width="4.5" height="6" rx="1"/>
+  </svg>`;
+}
+
 // ─── Filter Bar ───────────────────────────────────────────────────────────────
 function renderFilterBar() {
   const bar  = $id('filter-bar');
   const tags = getAllTags();
 
-  bar.innerHTML =
+  const tagsHtml =
     `<button class="filter-btn${S.filter === 'all' ? ' active' : ''}" data-filter="all">すべて</button>` +
     tags.map(tag => {
       const active = S.filter === tag.id;
@@ -396,9 +434,28 @@ function renderFilterBar() {
       </button>`;
     }).join('');
 
-  bar.querySelectorAll('.filter-btn').forEach(btn => {
+  bar.innerHTML =
+    `<div class="filter-tags">${tagsHtml}</div>` +
+    `<div class="col-toggle" role="group" aria-label="列数を切り替え">
+      ${[1, 2, 3].map(n =>
+        `<button class="col-btn${S.listCols === n ? ' active' : ''}"
+                 data-cols="${n}" aria-label="${n}列表示" title="${n}列">
+          ${colIcon(n)}
+        </button>`
+      ).join('')}
+    </div>`;
+
+  bar.querySelectorAll('[data-filter]').forEach(btn => {
     btn.addEventListener('click', () => {
       S.filter = btn.dataset.filter;
+      renderFilterBar();
+      renderList();
+    });
+  });
+  bar.querySelectorAll('[data-cols]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      S.listCols = parseInt(btn.dataset.cols, 10);
+      localStorage.setItem('flash_list_cols', S.listCols);
       renderFilterBar();
       renderList();
     });
@@ -415,6 +472,12 @@ async function renderList() {
     : S.items.filter(i => i.tags.includes(S.filter));
 
   const box = $id('items-container');
+
+  // 列数クラスを付け替え
+  box.className = S.listCols > 1 ? `cols-${S.listCols}` : '';
+
+  // 列数に応じたテキスト切り詰め文字数
+  const truncLen = S.listCols === 3 ? 35 : S.listCols === 2 ? 55 : 90;
 
   if (!filtered.length) {
     box.innerHTML = `<div class="empty-state">
@@ -433,7 +496,7 @@ async function renderList() {
           : ''}
       </button>
       <div class="item-body" data-expand="${item.id}">
-        <p class="item-content">${esc(trunc(item.content, 90))}</p>
+        <p class="item-content">${esc(trunc(item.content, truncLen))}</p>
         <div class="item-meta">
           ${tagBadges(item.tags)}
           <span class="item-date">${fmtDate(item.createdAt)}</span>
@@ -485,6 +548,8 @@ function handleExpand(id, card) {
   if (!item) return;
 
   card.classList.add('expanded');
+  // 多列グリッド時に grid-column: 1/-1 が即座に反映されるよう強制リフロー
+  card.getBoundingClientRect();
 
   const selectableTags = getAllTags().filter(t => t.id !== 'inbox');
   const activeTags     = new Set(item.tags);

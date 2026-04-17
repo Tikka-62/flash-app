@@ -65,7 +65,7 @@ const GCal = (() => {
   }
 
   function slotToTimes(dateStr, slot) {
-    const map = { morning: '08:00:00', noon: '12:00:00', evening: '19:00:00' };
+    const map = { morning: '09:00:00', noon: '12:00:00', evening: '21:00:00' };
     if (slot === 'allday') {
       return { start: { date: dateStr }, end: { date: nextDay(dateStr) } };
     }

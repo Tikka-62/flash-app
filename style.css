@@ -155,7 +155,7 @@ main {
 /* ─── Bottom Nav ───────────────────────────────────────────────────────────── */
 .bottom-nav {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   height: var(--nav-h);
   background: var(--surface);
   border-top: 1px solid var(--border);
@@ -519,9 +519,118 @@ kbd {
 
 #items-container {
   padding: 12px 16px;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 8px;
+  align-items: start;
+}
+
+/* ─── List View — uniform tile height ───────────────────────────────────────── */
+#items-container .item-card {
+  height: 90px;
+  overflow: hidden;
+}
+#items-container .item-card.expanded {
+  height: auto;
+  overflow: visible;
+}
+#items-container .item-content {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ─── List View — column layouts ────────────────────────────────────────────── */
+#items-container.cols-2 { grid-template-columns: repeat(2, 1fr); }
+#items-container.cols-3 { grid-template-columns: repeat(3, 1fr); }
+
+#items-container.cols-2 .item-card,
+#items-container.cols-3 .item-card {
+  padding: 10px 10px 10px 8px;
+  min-width: 0; /* グリッドでの溢れ防止 */
+}
+
+/* 展開カードは常に全幅に広げる */
+#items-container.cols-2 .item-card.expanded,
+#items-container.cols-3 .item-card.expanded {
+  grid-column: 1 / -1;
+}
+
+#items-container.cols-2 .item-body,
+#items-container.cols-3 .item-body {
+  min-width: 0;
+  overflow: hidden;
+}
+
+#items-container.cols-2 .item-content { font-size: 13px; }
+#items-container.cols-3 .item-content { font-size: 12px; }
+
+#items-container.cols-2 .item-meta,
+#items-container.cols-3 .item-meta {
+  gap: 4px;
+  margin-top: 5px;
+  flex-wrap: wrap;
+  overflow: hidden;
+}
+
+#items-container.cols-3 .tag-badge { font-size: 9px; padding: 1px 5px; }
+#items-container.cols-3 .item-date { font-size: 10px; }
+
+/* 3列ではチェックボタンを小さくしてスペース節約 */
+#items-container.cols-3 .item-check {
+  width: 18px; height: 18px;
+  flex-shrink: 0;
+}
+#items-container.cols-3 .item-check svg {
+  width: 11px; height: 11px;
+}
+
+/* ─── List View — filter bar with col-toggle ─────────────────────────────────── */
+#filter-bar {
+  padding: 0;
+  overflow: visible;
+  gap: 0;
+}
+#filter-bar .filter-tags {
+  flex: 1;
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  min-width: 0;
+}
+#filter-bar .filter-tags::-webkit-scrollbar { display: none; }
+
+.col-toggle {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 10px;
+  border-left: 1px solid var(--border);
+  flex-shrink: 0;
+  transition: border-color var(--transition);
+}
+.col-btn {
+  width: 30px; height: 30px;
+  border: 1.5px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.col-btn:active { transform: scale(.88); }
+.col-btn.active {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* ─── Item Card ────────────────────────────────────────────────────────────── */
