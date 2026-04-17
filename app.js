@@ -187,22 +187,42 @@ function toggleSchedulePanel() {
   } else {
     setTimeout(() => $id('input-text')?.focus(), 80);
   }
+  // パネル切替時にボタン状態を再評価
+  updateSaveBtn();
+}
+
+// ─── Save Button State ────────────────────────────────────────────────────────
+// モジュールスコープに置くことで toggleSchedulePanel からも呼べる
+function updateSaveBtn() {
+  const isScheduleMode = S.selectedTags.includes('schedule');
+  const cnt = $id('char-count');
+  const MAX = 1000;
+
+  if (isScheduleMode) {
+    // 予定モード：予定名が入力されていれば有効（メモは任意）
+    const titleVal = ($id('schedule-title')?.value || '').trim();
+    $id('save-btn').classList.toggle('empty', !titleVal);
+    if (cnt) cnt.textContent = '';
+  } else {
+    // 通常モード：メインテキストエリアの内容で判定
+    const ta  = $id('input-text');
+    const len = ta ? ta.value.length : 0;
+    if (cnt) {
+      cnt.textContent = len ? `${len} / ${MAX}` : '';
+      cnt.className   = 'char-count' + (len > MAX ? ' over' : len > MAX * 0.8 ? ' warn' : '');
+    }
+    $id('save-btn').classList.toggle('empty', !ta?.value.trim());
+  }
 }
 
 // ─── Input View ───────────────────────────────────────────────────────────────
 function initInputView() {
-  const ta  = $id('input-text');
-  const cnt = $id('char-count');
-  const MAX = 1000;
-
-  const updateSaveBtn = () => {
-    const len = ta.value.length;
-    cnt.textContent = len ? `${len} / ${MAX}` : '';
-    cnt.className = 'char-count' + (len > MAX ? ' over' : len > MAX * 0.8 ? ' warn' : '');
-    $id('save-btn').classList.toggle('empty', !ta.value.trim());
-  };
+  const ta = $id('input-text');
 
   ta.addEventListener('input', updateSaveBtn);
+  // 予定名の入力でも保存ボタン状態を更新
+  $id('schedule-title')?.addEventListener('input', updateSaveBtn);
+
   updateSaveBtn(); // 初期状態を反映
   ta.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); saveItem(); }
