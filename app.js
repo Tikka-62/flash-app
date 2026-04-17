@@ -10,6 +10,22 @@ const BUILTIN_TAGS = [
   { id: 'inbox',       label: '未分類',   color: '#94a3b8' },
 ];
 
+// Preset theme colors
+const THEME_PALETTE = [
+  '#87ceeb', // Sky（デフォルト）
+  '#6366f1', // Indigo
+  '#8b5cf6', // Violet
+  '#ec4899', // Pink
+  '#ef4444', // Red
+  '#f97316', // Orange
+  '#f59e0b', // Amber
+  '#84cc16', // Lime
+  '#10b981', // Emerald
+  '#06b6d4', // Cyan
+  '#0ea5e9', // Sky Blue
+  '#64748b', // Slate
+];
+
 // Preset colors for custom tags
 const TAG_PALETTE = [
   '#ff9999','#ffb347','#ffd966','#a8e6a3','#87d2f5',
@@ -196,13 +212,34 @@ function initInputView() {
 }
 
 async function saveItem() {
-  const ta      = $id('input-text');
-  const content = ta.value.trim();
-  if (!content) {
-    ta.focus();
-    ta.classList.add('shake');
-    setTimeout(() => ta.classList.remove('shake'), 500);
-    return;
+  const isScheduleMode = S.selectedTags.includes('schedule');
+
+  let content, scheduledDate = null, scheduledTime = null;
+
+  if (isScheduleMode) {
+    // 予定モード：schedule-title を主コンテンツとして使う
+    const titleEl = $id('schedule-title');
+    content = (titleEl?.value || '').trim();
+    if (!content) {
+      titleEl?.focus();
+      titleEl?.classList.add('shake');
+      setTimeout(() => titleEl?.classList.remove('shake'), 500);
+      return;
+    }
+    // メモがあれば本文に結合
+    const memoVal = ($id('schedule-memo')?.value || '').trim();
+    if (memoVal) content += '\n' + memoVal;
+    scheduledDate = $id('schedule-date')?.value || null;
+    scheduledTime = document.querySelector('input[name="schedule-time"]:checked')?.value || 'allday';
+  } else {
+    const ta = $id('input-text');
+    content  = ta.value.trim();
+    if (!content) {
+      ta.focus();
+      ta.classList.add('shake');
+      setTimeout(() => ta.classList.remove('shake'), 500);
+      return;
+    }
   }
 
   const tags = S.selectedTags.length ? [...S.selectedTags] : ['inbox'];
@@ -210,34 +247,33 @@ async function saveItem() {
     id:              genId(),
     content,
     tags,
-    tag:             tags[0],   // backward compat
+    tag:             tags[0],
     completed:       false,
     createdAt:       Date.now(),
     updatedAt:       Date.now(),
     googleEventId:   null,
-    scheduledDate:   null,
-    scheduledTime:   null,
+    scheduledDate,
+    scheduledTime,
     calendarColorId: null,
   };
 
   await DB.put(item);
 
-  ta.value = '';
+  // ── UI リセット ──────────────────────────────────────────────────
+  $id('input-text').value = '';
   $id('char-count').textContent = '';
   $id('save-btn').classList.add('empty');
   S.selectedTags = [];
-  // Reset schedule panel
   const scheduleTitle = $id('schedule-title');
   if (scheduleTitle) scheduleTitle.value = '';
-  const scheduleMemo = $id('schedule-memo');
-  if (scheduleMemo) scheduleMemo.value = '';
-  const scheduleDate = $id('schedule-date');
-  if (scheduleDate) scheduleDate.value = '';
+  const scheduleMemo  = $id('schedule-memo');
+  if (scheduleMemo)  scheduleMemo.value  = '';
+  const scheduleDate  = $id('schedule-date');
+  if (scheduleDate)  scheduleDate.value  = '';
   const defaultSlot = document.querySelector('input[name="schedule-time"][value="allday"]');
   if (defaultSlot) defaultSlot.checked = true;
   renderTagButtons();
   toggleSchedulePanel();
-
   renderInlineList();
 
   const btn = $id('save-btn');
@@ -246,7 +282,13 @@ async function saveItem() {
   setTimeout(() => { btn.textContent = '保存する'; btn.classList.remove('saved'); }, 1600);
 
   if (navigator.vibrate) navigator.vibrate(12);
-  ta.focus();
+
+  // 予定 + GCal 連携済み → GCalモーダルを自動で開く
+  if (isScheduleMode && GCal.isConnected()) {
+    setTimeout(() => openGCalModal(item), 400);
+  } else {
+    $id('input-text').focus();
+  }
 }
 
 // ─── Inline List (Input View) ─────────────────────────────────────────────────
@@ -679,10 +721,16 @@ const GCAL_COLORS = [
 ];
 
 function openGCalModal(item) {
-  $id('gcal-subject').value = item.content.slice(0, 100);
-  $id('gcal-date').value    = today();
+  // 件名：メモ付き予定の場合は1行目だけをタイトルに
+  $id('gcal-subject').value = item.content.split('\n')[0].slice(0, 100);
+  // 日付：保存済みのスケジュール日 or 今日
+  $id('gcal-date').value    = item.scheduledDate || today();
   $id('gcal-modal').dataset.itemId = item.id;
-  document.querySelector('input[name="time-slot"][value="allday"]').checked = true;
+  // 時間帯：保存済みのスロット or 終日
+  const slot = item.scheduledTime || 'allday';
+  const slotRadio = document.querySelector(`input[name="time-slot"][value="${slot}"]`);
+  if (slotRadio) slotRadio.checked = true;
+  else document.querySelector('input[name="time-slot"][value="allday"]').checked = true;
   const grid = $id('gcal-color-grid');
   if (!grid.children.length) {
     grid.innerHTML = GCAL_COLORS.map(c =>
@@ -824,6 +872,49 @@ function initCalNav() {
   });
 }
 
+// ─── Theme Color ──────────────────────────────────────────────────────────────
+function getTheme() {
+  return localStorage.getItem('flash_theme_color') || '#87ceeb';
+}
+function applyTheme(color) {
+  const r = parseInt(color.slice(1, 3), 16);
+  const g = parseInt(color.slice(3, 5), 16);
+  const b = parseInt(color.slice(5, 7), 16);
+  const root = document.documentElement;
+  root.style.setProperty('--theme',     color);
+  root.style.setProperty('--theme-rgb', `${r}, ${g}, ${b}`);
+  localStorage.setItem('flash_theme_color', color);
+}
+function renderThemePalette() {
+  const palette = $id('theme-palette');
+  if (!palette) return;
+  const current = getTheme();
+
+  palette.innerHTML =
+    THEME_PALETTE.map(c =>
+      `<button class="theme-swatch${c.toLowerCase() === current.toLowerCase() ? ' selected' : ''}"
+               data-theme="${c}" style="background:${c}" aria-label="${c}"></button>`
+    ).join('') +
+    `<label class="theme-swatch theme-swatch-custom" title="カスタムカラー" aria-label="カスタムカラー">
+       <input type="color" id="theme-custom-input" value="${current}">
+     </label>`;
+
+  palette.querySelectorAll('[data-theme]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      applyTheme(btn.dataset.theme);
+      renderThemePalette();
+    });
+  });
+  const customInput = $id('theme-custom-input');
+  if (customInput) {
+    customInput.addEventListener('input', e => {
+      applyTheme(e.target.value);
+      // プリセットの選択状態を外す
+      palette.querySelectorAll('[data-theme]').forEach(b => b.classList.remove('selected'));
+    });
+  }
+}
+
 // ─── Dark Mode ────────────────────────────────────────────────────────────────
 function isDarkMode() {
   return localStorage.getItem('flash_dark_mode') === 'on';
@@ -845,6 +936,8 @@ function renderSettings() {
   // sync toggle state
   const toggle = $id('dark-mode-toggle');
   if (toggle) toggle.checked = isDarkMode();
+  // render theme palette
+  renderThemePalette();
 }
 
 function initSettings() {
@@ -925,6 +1018,7 @@ function initNav() {
 // ─── Init ─────────────────────────────────────────────────────────────────────
 async function init() {
   applyDarkMode(isDarkMode()); // 保存済み設定を即時反映
+  applyTheme(getTheme());      // 保存済みテーマカラーを即時反映
   await DB.open();
   initNav();
   initInputView();
