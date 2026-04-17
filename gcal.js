@@ -5,9 +5,11 @@ const GCal = (() => {
   let _tokenClient = null;
 
   // ── Storage helpers ─────────────────────────────────────────────────────────
-  function getClientId()      { return localStorage.getItem('gcal_client_id') || ''; }
-  function setClientId(id)    { localStorage.setItem('gcal_client_id', id); }
-  function isConnected()      { return !!getClientId(); }
+  function getClientId()       { return localStorage.getItem('gcal_client_id') || ''; }
+  function setClientId(id)     { localStorage.setItem('gcal_client_id', id); }
+  function isConnected()       { return !!getClientId(); }
+  function getDefaultColor()   { return localStorage.getItem('gcal_default_color') || '7'; }
+  function setDefaultColor(id) { localStorage.setItem('gcal_default_color', id); }
 
   function disconnect() {
     if (_token && window.google?.accounts?.oauth2) {
@@ -108,10 +110,10 @@ const GCal = (() => {
       item.scheduledTime || 'allday'
     );
     const body = {
-      summary:     item.content.slice(0, 100),
-      description: item.content,
+      summary:     item.content.split('\n')[0].slice(0, 100), // タイトル行のみ
+      description: item.scheduleMemo || '',                    // メモ欄の内容
       start, end,
-      colorId: item.calendarColorId || '1',
+      colorId: item.calendarColorId || getDefaultColor(),      // デフォルト=ピーコック
       extendedProperties: { private: { flashId: item.id } },
     };
     const data = await apiFetch('/calendars/primary/events', {
@@ -138,6 +140,7 @@ const GCal = (() => {
 
   return {
     getClientId, setClientId, isConnected, disconnect,
+    getDefaultColor, setDefaultColor,
     createEvent, updateEventCompleted, deleteEvent,
   };
 })();

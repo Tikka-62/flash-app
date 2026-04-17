@@ -656,6 +656,28 @@ kbd {
   box-shadow: 0 0 0 1px var(--accent), var(--shadow-md);
 }
 
+/* 展開時：折り返しレイアウトに切り替え */
+.item-card.expanded {
+  flex-wrap: wrap;
+}
+
+/* 展開時：テキストを全文・折り返しあり・行数制限なしで表示 */
+.item-card.expanded .item-content {
+  display: block !important;
+  -webkit-line-clamp: unset !important;
+  -webkit-box-orient: unset !important;
+  overflow: visible !important;
+  white-space: pre-wrap;
+}
+
+/* 展開時：アクション部分を全幅で2行目に落とす */
+.item-card.expanded .item-actions {
+  flex-basis: 100%;
+  width: 100%;
+  margin-left: 0;
+  padding-left: 32px; /* チェックボタン幅 + gap 分インデント */
+}
+
 .item-card.completed .item-content {
   text-decoration: line-through;
   color: var(--text-3);
@@ -729,11 +751,14 @@ kbd {
 
 /* ─── Expanded Item ─────────────────────────────────────────────────────────── */
 .item-actions {
-  padding-top: 10px;
+  padding-top: 8px;
   border-top: 1px solid var(--border);
-  margin-top: 10px;
-  margin-left: -22px;     /* extend to cover check button area */
+  margin-top: 8px;
+  margin-left: -22px;
   padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .item-full-content {
@@ -742,20 +767,78 @@ kbd {
   line-height: 1.65;
   white-space: pre-wrap;
   word-break: break-word;
-  margin-bottom: 8px;
 }
 
-.item-full-meta {
+/* タグ行 */
+.expand-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+
+.expand-save-tags {
+  padding: 3px 10px;
+  border: 1.5px solid var(--accent);
+  border-radius: 50px;
+  background: transparent;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .15s ease;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+}
+.expand-save-tags:hover  { background: var(--accent-bg); }
+.expand-save-tags:active { transform: scale(.93); }
+
+/* フッター行：日時 + ボタン群 */
+.expand-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--border);
+  padding-top: 7px;
+  gap: 8px;
+}
+
+.expand-date {
   font-size: 11px;
   color: var(--text-3);
-  margin-bottom: 10px;
+  white-space: nowrap;
 }
 
-.action-btns {
+.expand-btns {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 5px;
+  flex-shrink: 0;
 }
+
+.expand-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--surface2);
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s ease;
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+}
+.expand-btn:active    { transform: scale(.95); }
+.expand-btn.edit-btn:hover   { border-color: var(--theme); color: var(--theme); }
+.expand-btn.gcal-btn:hover   { border-color: var(--accent); color: var(--accent); }
+.expand-btn.delete-btn:hover { border-color: #ef4444; color: #ef4444; }
+.expand-btn.edit-save-mode   { background: var(--theme) !important; border-color: var(--theme) !important; color: #fff !important; }
+
+/* 後方互換：旧クラス名が残っていても壊れないよう */
+.action-btns { display: flex; gap: 8px; flex-wrap: wrap; }
 
 /* ─── Tag Editor (inside expanded item) ──────────────────────────────────────── */
 .tag-editor {
